@@ -109,7 +109,15 @@ function updateLayers(){
                 layers[layer].bars[thing].layer = layer
                 if (layers[layer].bars[thing].unlocked === undefined)
                     layers[layer].bars[thing].unlocked = true
-                
+            }  
+        }
+
+        if (layers[layer].infoboxes){
+            for (thing in layers[layer].infoboxes){
+                layers[layer].infoboxes[thing].id = thing
+                layers[layer].infoboxes[thing].layer = layer
+                if (layers[layer].infoboxes[thing].unlocked === undefined)
+                    layers[layer].infoboxes[thing].unlocked = true
             }  
         }
 
@@ -118,6 +126,8 @@ function updateLayers(){
         if(layers[layer].unlockOrder === undefined) layers[layer].unlockOrder = []
         if(layers[layer].gainMult === undefined) layers[layer].gainMult = new Decimal(1)
         if(layers[layer].gainExp === undefined) layers[layer].gainExp = new Decimal(1)
+        if(layers[layer].type === undefined) layers[layer].type = "none"
+        if(layers[layer].base === undefined || layers[layer].base <= 1) layers[layer].base = 2
 
         let row = layers[layer].row
         if(!ROW_LAYERS[row]) ROW_LAYERS[row] = {}

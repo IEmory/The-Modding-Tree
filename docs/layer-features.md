@@ -94,10 +94,13 @@ Key:
 - achievements: Kind of like milestones, but with a different display style and some other differences. Extra features are on the way at a later date!
     [Explanations are in a separate file.](achievements.md)
 
+- infoboxes: Displays some text in a box that can be shown or hidden.
+    [Explanations are in a separate file.](infoboxes.md)
+
 
 ## Prestige formula features
 
-- type: Determines which prestige formula you use.
+- type: **optional**, Determines which prestige formula you use. Defaults to "none".
     "normal": The amount of currency you gain is independent of its current amount (like Prestige).
         formula before bonuses is based on `baseResource^exponent`
     "static": The cost is dependent on your total after reset. 
@@ -115,7 +118,8 @@ Key:
 
 - exponent: Used as described above.
 
-- base: **sometimes required**, required for "static" layers, used as described above.
+- base: **sometimes required**, required for "static" layers, used as described above. If absent, defaults to 2.
+        Must be greater than 1.
 
 - roundUpCost: **optional**, a bool, which is true if the resource cost needs to be rounded up.
             (use if the base resource is a "static" currency.)

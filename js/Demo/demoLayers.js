@@ -41,6 +41,14 @@ addLayer("c", {
             eff.waffleBoost = eff.waffleBoost.times(buyableEffect(this.layer, 11).first)
             return "which are boosting waffles by "+format(eff.waffleBoost)+" and increasing the Ice Cream cap by "+format(eff.icecreamCap)
         },
+        infoboxes:{
+            coolInfo: {
+                title: "Lore",
+                titleStyle: {'color': '#FE0000'},
+                body: "DEEP LORE!",
+                bodyStyle: {'background-color': "#0000EE"}
+            }
+        },
         milestones: {
             0: {requirementDescription: "3 Lollipops",
                 done() {return player[this.layer].best.gte(3)}, // Used to determine when to give the milestone
@@ -305,6 +313,7 @@ addLayer("c", {
             },
             jail: {
                 content: [
+                    ["infobox", "coolInfo"],
                     ["bar", "longBoi"], "blank",
                     ["row", [
                         ["column", [
@@ -459,7 +468,7 @@ addLayer("f", {
 }, 
 )
 
-// A side layer with achievements
+// A side layer with achievements, with no prestige
 addLayer("a", {
         startData() { return {
             unlocked: true,
@@ -467,7 +476,6 @@ addLayer("a", {
         }},
         color: "yellow",
         resource: "achievement power", 
-        type: "none",
         row: "side",
         layerShown() {return true}, 
         tooltip() { // Optional, tooltip displays when the layer is locked
