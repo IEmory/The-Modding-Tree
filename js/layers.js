@@ -27,6 +27,9 @@ addLayer("p", {
 			if (hasUpgrade("p", 21)) mult = mult.times(1.8);
 			if (hasUpgrade("b", 11)) mult = mult.times(upgradeEffect("b", 11));
 			if (hasUpgrade("g", 11)) mult = mult.times(upgradeEffect("g", 11));
+			if (player.t.unlocked) mult = mult.times(tmp.t.enEff);
+			if (player.e.unlocked) mult = mult.times(layers.e.buyables[11].effect().first);
+			if (player.s.unlocked) mult = mult.times(buyableEffect("s", 11));
             return mult
         },
         gainExp() { // Calculate the exponent on main currency from bonuses
@@ -36,7 +39,7 @@ addLayer("p", {
         },
         row: 0, // Row the layer is in on the tree (0 is the first row)
         hotkeys: [
-            {key: "p", description: "Reset for prestige points", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+            {key: "p", description: "Press P to Prestige.", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
         ],
         layerShown(){return true},
 		update(diff) {
@@ -46,6 +49,9 @@ addLayer("p", {
 			let keep = [];
 			if (hasMilestone("b", 0) && resettingLayer=="b") keep.push("upgrades")
 			if (hasMilestone("g", 0) && resettingLayer=="g") keep.push("upgrades")
+			if (hasMilestone("e", 1) && resettingLayer=="e") keep.push("upgrades")
+			if (hasMilestone("t", 1) && resettingLayer=="t") keep.push("upgrades")
+			if (hasMilestone("s", 1) && resettingLayer=="s") keep.push("upgrades")
 			if (layers[resettingLayer].row > this.row) layerDataReset("p", keep)
 		},
 		startData() { return {
@@ -165,20 +171,25 @@ addLayer("b", {
 		gainMult() { 
 			let mult = new Decimal(1);
 			if (hasUpgrade("b", 23)) mult = mult.div(upgradeEffect("b", 23));
+			if (player.s.unlocked) mult = mult.div(buyableEffect("s", 13));
 			return mult;
 		},
 		canBuyMax() { return hasMilestone("b", 1) },
         row: 1, // Row the layer is in on the tree (0 is the first row)
         hotkeys: [
-            {key: "b", description: "Perform a booster reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+            {key: "b", description: "Press B to perform a booster reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
         ],
         layerShown(){return player.p.unlocked},
 		automate() {},
-		resetsNothing() { return false },
+		resetsNothing() { return hasMilestone("t", 4) },
 		effectBase() {
 			let base = new Decimal(2);
 			if (hasUpgrade("b", 12)) base = base.plus(upgradeEffect("b", 12));
 			if (hasUpgrade("b", 13)) base = base.plus(upgradeEffect("b", 13));
+			if (hasUpgrade("t", 11)) base = base.plus(upgradeEffect("t", 11));
+			if (hasUpgrade("e", 11)) base = base.plus(upgradeEffect("e", 11).b);
+			if (player.e.unlocked) base = base.plus(layers.e.buyables[11].effect().second);
+			if (player.s.unlocked) base = base.plus(buyableEffect("s", 12));
 			return base;
 		},
 		effect() {
@@ -187,13 +198,25 @@ addLayer("b", {
 		effectDescription() {
 			return "which are boosting Point generation by "+format(this.effect())+"x"
 		},
+		doReset(resettingLayer) {
+			let keep = [];
+			if (hasMilestone("e", 0) && resettingLayer=="e") keep.push("milestones")
+			if (hasMilestone("t", 0) && resettingLayer=="t") keep.push("milestones")
+			if (hasMilestone("s", 0) && resettingLayer=="s") keep.push("milestones")
+			if (hasMilestone("t", 2)) keep.push("upgrades")
+			if (layers[resettingLayer].row > this.row) layerDataReset("b", keep)
+		},
 		startData() { return {
 			unlocked: false,
 			points: new Decimal(0),
 			best: new Decimal(0),
 			total: new Decimal(0),
 			first: 0,
+			auto: false,
 		}},
+		automate() {
+			if (hasMilestone("t", 3) && player.b.auto) doReset("b");
+		},
 		increaseUnlockOrder: ["g"],
 		milestones: {
 			0: {
@@ -231,7 +254,7 @@ addLayer("b", {
 				description: "Total Prestige Points add to the Booster effect base.",
 				cost: new Decimal(8),
 				effect() { return player.p.total.add(1).log10().add(1).log10().div(3) },
-				unlocked() { return player.b.unlocked&&player.b.best.gte(8) },
+				unlocked() { return player.b.unlocked&&player.b.best.gte(7) },
 				effectDisplay() { return "+"+format(this.effect()) },
 			},
 			21: {
@@ -261,7 +284,7 @@ addLayer("g", {
         name: "generators", // This is optional, only used in a few places, If absent it just uses the layer id.
         symbol: "G", // This appears on the layer's node. Default is the id with the first letter capitalized
         position: 1, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
-        color: "#47b346",
+        color: "#a3d9a5",
         requires() { return new Decimal(200).times((player.g.unlockOrder&&!player.g.unlocked)?5000:1) }, // Can be a function that takes requirement increases into account
         resource: "generators", // Name of prestige currency
         baseResource: "points", // Name of resource prestige is based on
@@ -273,20 +296,24 @@ addLayer("g", {
 		gainMult() {
 			let mult = new Decimal(1);
 			if (hasUpgrade("g", 22)) mult = mult.div(upgradeEffect("g", 22));
+			if (player.s.unlocked) mult = mult.div(buyableEffect("s", 13));
 			return mult;
 		},
 		canBuyMax() { return hasMilestone("g", 2) },
         row: 1, // Row the layer is in on the tree (0 is the first row)
         hotkeys: [
-            {key: "g", description: "Perform a generator reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+            {key: "g", description: "Press G to perform a generator reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
         ],
         layerShown(){return player.p.unlocked},
 		automate() {},
-		resetsNothing() { return false },
+		resetsNothing() { return hasMilestone("s", 4) },
 		effBase() {
 			let base = new Decimal(2);
 			if (hasUpgrade("g", 12)) base = base.plus(upgradeEffect("g", 12));
 			if (hasUpgrade("g", 13)) base = base.plus(upgradeEffect("g", 13));
+			if (hasUpgrade("e", 11)) base = base.plus(upgradeEffect("e", 11).g);
+			if (player.e.unlocked) base = base.plus(layers.e.buyables[11].effect().second);
+			if (player.s.unlocked) base = base.plus(buyableEffect("s", 12));
 			return base;
 		},
 		effect() {
@@ -308,7 +335,11 @@ addLayer("g", {
 			total: new Decimal(0),
 			power: new Decimal(0),
 			first: 0,
+			auto: false,
 		}},
+		automate() {
+			if (hasMilestone("s", 3) && player.g.auto) doReset("g");
+		},
 		powerExp() {
 			let exp = new Decimal(1/3);
 			if (hasUpgrade("b", 21)) exp = exp.times(2);
@@ -321,10 +352,14 @@ addLayer("g", {
 		doReset(resettingLayer) {
 			let keep = [];
 			player.g.power = new Decimal(0);
-			if (layers[resettingLayer].row > this.row) layerDataReset("p", keep)
+			if (hasMilestone("e", 0) && resettingLayer=="e") keep.push("milestones")
+			if (hasMilestone("t", 0) && resettingLayer=="t") keep.push("milestones")
+			if (hasMilestone("s", 0) && resettingLayer=="s") keep.push("milestones")
+			if (hasMilestone("s", 2)) keep.push("upgrades")
+			if (layers[resettingLayer].row > this.row) layerDataReset("g", keep)
 		},
 		tabFormat: ["main-display",
-			["prestige-button", function(){return "Melt your points into "}],
+			"prestige-button",
 			"blank",
 			["display-text",
 				function() {return 'You have ' + format(player.g.power) + ' Generator Power, which boosts Point generation by '+format(tmp.g.powerEff)+'x'},
@@ -451,6 +486,431 @@ addLayer("g", {
 		},
 })
 
+addLayer("t", {
+        name: "time", // This is optional, only used in a few places, If absent it just uses the layer id.
+        symbol: "T", // This appears on the layer's node. Default is the id with the first letter capitalized
+        position: 0, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
+        startData() { return {
+            unlocked: false,
+			points: new Decimal(0),
+			best: new Decimal(0),
+			energy: new Decimal(0),
+			first: 0,
+        }},
+        color: "#006609",
+        requires() { return new Decimal(1e120).times(Decimal.pow("1e200", Decimal.pow(player[this.layer].unlockOrder, 2))) }, // Can be a function that takes requirement increases into account
+        resource: "time capsules", // Name of prestige currency
+        baseResource: "points", // Name of resource prestige is based on
+        baseAmount() {return player.points}, // Get the current amount of baseResource
+        type: "static", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
+        exponent: new Decimal(1.85), // Prestige currency exponent
+		base: new Decimal(1e15),
+        gainMult() { // Calculate the multiplier for main currency from bonuses
+            mult = new Decimal(1)
+            return mult
+        },
+        gainExp() { // Calculate the exponent on main currency from bonuses
+            return new Decimal(1)
+        },
+		effect() { return {
+			gain: Decimal.pow(3, player.t.points.plus(player.t.buyables[11])).sub(1).times(player.t.points.plus(player.t.buyables[11]).gt(0)?1:0),
+			limit: Decimal.pow(2, player.t.points.plus(player.t.buyables[11])).sub(1).times(100).times(player.t.points.plus(player.t.buyables[11]).gt(0)?1:0),
+		}},
+		effectDescription() {
+			return "which are generating "+format(this.effect().gain)+" Time Energy/sec, but with a limit of "+format(this.effect().limit)+" Time Energy"
+		},
+		enEff() {
+			return player.t.energy.add(1).pow(1.2);
+		},
+		update(diff) {
+			if (player.t.unlocked) player.t.energy = player.t.energy.plus(this.effect().gain.times(diff)).min(this.effect().limit);
+		},
+        row: 2, // Row the layer is in on the tree (0 is the first row)
+        hotkeys: [
+            {key: "t", description: "Press T to Time Reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+        ],
+		tabFormat: ["main-display",
+			"prestige-button",
+			"blank",
+			["display-text",
+				function() {return 'You have ' + format(player.t.energy) + ' Time Energy, which boosts Point & Prestige Point gain by '+format(tmp.t.enEff)+'x'},
+					{}],
+			"blank",
+			["display-text",
+				function() {return 'Your best Time Capsules is ' + formatWhole(player.t.best)},
+					{}],
+			"blank",
+			"milestones", "blank", "buyables", "blank", "upgrades"],
+        increaseUnlockOrder: ["e", "s"],
+        doReset(resettingLayer){ // Triggers when this layer is being reset, along with the layer doing the resetting. Not triggered by lower layers resetting, but is by layers on the same row.
+            // TODO
+        },
+        layerShown(){return player.b.unlocked},
+        branches: ["b"],
+		upgrades: {
+			rows: 3,
+			cols: 4,
+			11: {
+				title: "Pseudo-Boost",
+				description: "Non-extra Time Capsules add to the Booster base.",
+				cost: new Decimal(2),
+				unlocked() { return player.t.unlocked },
+				effect() { 
+					return player.t.points.pow(0.9).add(0.5);
+				},
+				effectDisplay() { return "+"+format(this.effect()) },
+			},
+		},
+		buyables: {
+			rows: 1,
+			cols: 1,
+			11: {
+				title: "Extra Time Capsules",
+				cost(x=player[this.layer].buyables[this.id]) { // cost for buying xth buyable, can be an object if there are multiple currencies
+                    if (x.gte(25)) x = x.pow(2).div(25)
+                    let cost = x.times(0.4).pow(1.2).add(1).times(10)
+                    return cost.floor()
+                },
+				display() { // Everything else displayed in the buyable button after the title
+                    let data = tmp[this.layer].buyables[this.id]
+                    return "Cost: " + formatWhole(data.cost) + " Boosters\n\
+                    Amount: " + formatWhole(player[this.layer].buyables[this.id])
+                },
+                unlocked() { return player[this.layer].unlocked }, 
+                canAfford() {
+                    return player.b.points.gte(tmp[this.layer].buyables[this.id].cost)},
+                buy() { 
+                    cost = tmp[this.layer].buyables[this.id].cost
+                    player.b.points = player.b.points.sub(cost)	
+                    player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+                },
+                buyMax() {}, // You'll have to handle this yourself if you want
+                style: {'height':'222px'},
+			},
+		},
+		milestones: {
+			0: {
+				requirementDescription: "2 Time Capsules",
+				done() { return player.t.best.gte(2) },
+				effectDescription: "Keep Booster/Generator milestones on reset.",
+			},
+			1: {
+				requirementDescription: "3 Time Capsules",
+				done() { return player.t.best.gte(3) },
+				effectDescription: "Keep Prestige Upgrades on reset.",
+			},
+			2: {
+				requirementDescription: "4 Time Capsules",
+				done() { return player.t.best.gte(4) },
+				effectDescription: "Keep Booster Upgrades on all resets.",
+			},
+			3: {
+				requirementDescription: "5 Time Capsules",
+				done() { return player.t.best.gte(5) },
+				effectDescription: "Unlock Auto-Boosters.",
+				toggles: [["b", "auto"]],
+			},
+			4: {
+				requirementDescription: "12 Time Capsules",
+				done() { return player.t.best.gte(12) },
+				effectDescription: "Boosters reset nothing.",
+			},
+		},
+})
+
+addLayer("e", {
+        name: "enhance", // This is optional, only used in a few places, If absent it just uses the layer id.
+        symbol: "E", // This appears on the layer's node. Default is the id with the first letter capitalized
+        position: 1, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
+        startData() { return {
+            unlocked: false,
+			points: new Decimal(0),
+			best: new Decimal(0),
+			total: new Decimal(0),
+			first: 0,
+        }},
+        color: "#b82fbd",
+        requires() { return new Decimal(1e120).times(Decimal.pow("1e200", Decimal.pow(player[this.layer].unlockOrder, 2))) }, // Can be a function that takes requirement increases into account
+        resource: "enhance points", // Name of prestige currency
+        baseResource: "points", // Name of resource prestige is based on
+        baseAmount() {return player.points}, // Get the current amount of baseResource
+        type: "normal", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
+        exponent: new Decimal(.02), // Prestige currency exponent
+        gainMult() { // Calculate the multiplier for main currency from bonuses
+            mult = new Decimal(1)
+            return mult
+        },
+        gainExp() { // Calculate the exponent on main currency from bonuses
+            return new Decimal(1)
+        },
+        row: 2, // Row the layer is in on the tree (0 is the first row)
+        hotkeys: [
+            {key: "e", description: "Press E to Enhance Reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+        ],
+        increaseUnlockOrder: ["t", "s"],
+        doReset(resettingLayer){ // Triggers when this layer is being reset, along with the layer doing the resetting. Not triggered by lower layers resetting, but is by layers on the same row.
+            // TODO
+        },
+        layerShown(){return player.b.unlocked&&player.g.unlocked},
+        branches: ["b","g"],
+		upgrades: {
+			rows: 3,
+			cols: 5,
+			11: {
+				title: "Row 2 Synergy",
+				description: "Boosters & Generators boost each other.",
+				cost: new Decimal(40),
+				unlocked() { return player.e.unlocked },
+				effect() { 
+					let exp = 1
+					return {g: player.b.points.add(1).log10().pow(exp), b: player.g.points.add(1).log10().pow(exp)} 
+				},
+				effectDisplay() { return "+"+format(this.effect().g)+" to Generator base, +"+format(this.effect().b)+" to Booster base" },
+			},
+		},
+		buyables: {
+			rows: 1,
+			cols: 1,
+			11: {
+				title: "Enhancers",
+				cost(x=player[this.layer].buyables[this.id]) { // cost for buying xth buyable, can be an object if there are multiple currencies
+                    if (x.gte(25)) x = x.pow(2).div(25)
+                    let cost = Decimal.pow(2, x.pow(1.5))
+                    return cost.floor()
+                },
+				effect(x=player[this.layer].buyables[this.id]) { // Effects of owning x of the items, x is a decimal
+                    let eff = {}
+                    if (x.gte(0)) eff.first = Decimal.pow(25, x.pow(1.1))
+                    else eff.first = Decimal.pow(1/25, x.times(-1).pow(1.1))
+                
+                    if (x.gte(0)) eff.second = x.pow(0.8)
+                    else eff.second = x.times(-1).pow(0.8).times(-1)
+                    return eff;
+                },
+				display() { // Everything else displayed in the buyable button after the title
+                    let data = tmp[this.layer].buyables[this.id]
+                    return "Cost: " + formatWhole(data.cost) + " Enhance Points\n\
+                    Amount: " + formatWhole(player[this.layer].buyables[this.id]) + "\n\
+                    Boosts Prestige Point gain by " + format(data.effect.first) + "x and adds to the Booster/Generator base by " + format(data.effect.second)
+                },
+                unlocked() { return player[this.layer].unlocked }, 
+                canAfford() {
+                    return player[this.layer].points.gte(tmp[this.layer].buyables[this.id].cost)},
+                buy() { 
+                    cost = tmp[this.layer].buyables[this.id].cost
+                    player[this.layer].points = player[this.layer].points.sub(cost)	
+                    player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+                },
+                buyMax() {}, // You'll have to handle this yourself if you want
+                style: {'height':'222px'},
+			},
+		},
+		milestones: {
+			0: {
+				requirementDescription: "2 Enhance Points",
+				done() { return player.e.best.gte(2) },
+				effectDescription: "Keep Booster/Generator milestones on reset.",
+			},
+			1: {
+				requirementDescription: "10 Enhance Points",
+				done() { return player.e.best.gte(10) },
+				effectDescription: "Keep Prestige Upgrades on reset.",
+			},
+		},
+})
+
+addLayer("s", {
+        name: "space", // This is optional, only used in a few places, If absent it just uses the layer id.
+        symbol: "S", // This appears on the layer's node. Default is the id with the first letter capitalized
+        position: 2, // Horizontal position within a row. By default it uses the layer id and sorts in alphabetical order
+        startData() { return {
+            unlocked: false,
+			points: new Decimal(0),
+			best: new Decimal(0),
+			spent: new Decimal(0),
+			first: 0,
+        }},
+        color: "#dfdfdf",
+        requires() { return new Decimal(1e120).times(Decimal.pow("1e200", Decimal.pow(player[this.layer].unlockOrder, 2))) }, // Can be a function that takes requirement increases into account
+        resource: "space energy", // Name of prestige currency
+        baseResource: "points", // Name of resource prestige is based on
+        baseAmount() {return player.points}, // Get the current amount of baseResource
+        type: "static", // normal: cost to gain currency depends on amount gained. static: cost depends on how much you already have
+        exponent: new Decimal(1.85), // Prestige currency exponent
+        base: new Decimal(1e15),
+        gainMult() { // Calculate the multiplier for main currency from bonuses
+            mult = new Decimal(1)
+            return mult
+        },
+        gainExp() { // Calculate the exponent on main currency from bonuses
+            return new Decimal(1)
+        },
+        row: 2, // Row the layer is in on the tree (0 is the first row)
+        hotkeys: [
+            {key: "s", description: "Press S to Space Reset", onPress(){if (canReset(this.layer)) doReset(this.layer)}},
+        ],
+        increaseUnlockOrder: ["t", "e"],
+        doReset(resettingLayer){ // Triggers when this layer is being reset, along with the layer doing the resetting. Not triggered by lower layers resetting, but is by layers on the same row.
+            // TODO
+        },
+		space() {
+			return player.s.best.pow(1.1).times(3).floor().sub(player.s.spent);
+		},
+		buildingBaseCosts: {
+			11: new Decimal(1e3),
+			12: new Decimal(1e10),
+			13: new Decimal(1e25),
+		},
+		tabFormat: ["main-display",
+			"prestige-button",
+			"blank",
+			["display-text",
+				function() {return 'Your Space Energy has provided you with ' + formatWhole(tmp.s.space) + ' Space'},
+					{}],
+			"blank",
+			["display-text",
+				function() {return 'Your best Space Energy is ' + formatWhole(player.s.best)},
+					{}],
+			"blank",
+			"milestones", "blank", "buyables", "blank", "upgrades"],
+        layerShown(){return player.g.unlocked},
+        branches: ["g"],
+		upgrades: {
+			rows: 3,
+			cols: 4,
+			11: {
+				description: "Add a free level to all Space Buildings.",
+				cost: new Decimal(2),
+				unlocked() { return player[this.layer].unlocked }
+			},
+		},
+		buyables: {
+			rows: 1,
+			cols: 3,
+			showRespec() { return player.s.unlocked },
+            respec() { // Optional, reset things and give back your currency. Having this function makes a respec button appear
+				player[this.layer].spent = new Decimal(0);
+                resetBuyables(this.layer)
+                doReset(this.layer, true) // Force a reset
+            },
+            respecText: "Respec Space Buildings", // Text on Respec button, optional
+			11: {
+				title: "Primary Space Building",
+				cost(x=player[this.layer].buyables[this.id]) { // cost for buying xth buyable, can be an object if there are multiple currencies
+					let base = tmp.s.buildingBaseCosts[this.id];
+					if (x.eq(0)) return new Decimal(0);
+					return Decimal.pow(base, x.pow(1.35)).times(base);
+                },
+				effect(x=player[this.layer].buyables[this.id]) { // Effects of owning x of the items, x is a decimal
+					let eff = Decimal.pow(x.plus(1), player.s.points.sqrt()).times(x.times(4));
+					return eff;
+                },
+				display() { // Everything else displayed in the buyable button after the title
+                    let data = tmp[this.layer].buyables[this.id]
+                    return "Cost: " + formatWhole(data.cost) + " Generator Power\n\
+                    Level: " + formatWhole(player[this.layer].buyables[this.id]) + "\n\
+                    Space Energy boosts Point gain & Prestige Point gain by " + format(data.effect) +"x"
+                },
+                unlocked() { return player[this.layer].unlocked }, 
+                canAfford() {
+                    return player.g.power.gte(tmp[this.layer].buyables[this.id].cost) && layers.s.space().gt(0)},
+                buy() { 
+                    cost = tmp[this.layer].buyables[this.id].cost
+                    player.g.power = player.g.power.sub(cost)
+					player.s.spent = player.s.spent.plus(1);
+                    player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+                },
+                buyMax() {}, // You'll have to handle this yourself if you want
+                style: {'height':'100px'},
+			},
+			12: {
+				title: "Secondary Space Building",
+				cost(x=player[this.layer].buyables[this.id]) { // cost for buying xth buyable, can be an object if there are multiple currencies
+					let base = tmp.s.buildingBaseCosts[this.id];
+					return Decimal.pow(base, x.pow(1.35)).times(base);
+                },
+				effect(x=player[this.layer].buyables[this.id]) { // Effects of owning x of the items, x is a decimal
+					let eff = x.sqrt();
+					return eff;
+                },
+				display() { // Everything else displayed in the buyable button after the title
+                    let data = tmp[this.layer].buyables[this.id]
+                    return "Cost: " + formatWhole(data.cost) + " Generator Power\n\
+                    Level: " + formatWhole(player[this.layer].buyables[this.id]) + "\n\
+                    Adds to base of Booster/Generator effects by +" + format(data.effect)
+                },
+                unlocked() { return player[this.layer].unlocked }, 
+                canAfford() {
+                    return player.g.power.gte(tmp[this.layer].buyables[this.id].cost) && layers.s.space().gt(0)},
+                buy() { 
+                    cost = tmp[this.layer].buyables[this.id].cost
+                    player.g.power = player.g.power.sub(cost)
+					player.s.spent = player.s.spent.plus(1);
+                    player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+                },
+                buyMax() {}, // You'll have to handle this yourself if you want
+                style: {'height':'100px'},
+			},
+			13: {
+				title: "Tertiary Space Building",
+				cost(x=player[this.layer].buyables[this.id]) { // cost for buying xth buyable, can be an object if there are multiple currencies
+					let base = tmp.s.buildingBaseCosts[this.id];
+					return Decimal.pow(base, x.pow(1.35)).times(base);
+                },
+				effect(x=player[this.layer].buyables[this.id]) { // Effects of owning x of the items, x is a decimal
+					let eff = Decimal.pow(1e18, x.pow(0.9))
+					if (eff.gte("e3e9")) eff = Decimal.pow(10, eff.log10().times(9e18).cbrt())
+					return eff;
+                },
+				display() { // Everything else displayed in the buyable button after the title
+                    let data = tmp[this.layer].buyables[this.id]
+                    return "Cost: " + formatWhole(data.cost) + " Generator Power\n\
+                    Level: " + formatWhole(player[this.layer].buyables[this.id]) + "\n\
+                    Divide Booster/Generator cost by " + format(data.effect)
+                },
+                unlocked() { return player[this.layer].unlocked }, 
+                canAfford() {
+                    return player.g.power.gte(tmp[this.layer].buyables[this.id].cost) && layers.s.space().gt(0)},
+                buy() { 
+                    cost = tmp[this.layer].buyables[this.id].cost
+                    player.g.power = player.g.power.sub(cost)
+					player.s.spent = player.s.spent.plus(1);
+                    player[this.layer].buyables[this.id] = player[this.layer].buyables[this.id].add(1)
+                },
+                buyMax() {}, // You'll have to handle this yourself if you want
+                style: {'height':'100px'},
+			},
+		},
+		milestones: {
+			0: {
+				requirementDescription: "2 Space Energy",
+				done() { return player.s.best.gte(2) },
+				effectDescription: "Keep Booster/Generator milestones on reset.",
+			},
+			1: {
+				requirementDescription: "3 Space Energy",
+				done() { return player.s.best.gte(3) },
+				effectDescription: "Keep Prestige Upgrades on reset.",
+			},
+			2: {
+				requirementDescription: "4 Space Energy",
+				done() { return player.s.best.gte(4) },
+				effectDescription: "Keep Generator Upgrades on all resets.",
+			},
+			3: {
+				requirementDescription: "5 Space Energy",
+				done() { return player.s.best.gte(5) },
+				effectDescription: "Unlock Auto-Generators.",
+				toggles: [["g", "auto"]],
+			},
+			4: {
+				requirementDescription: "12 Space Energy",
+				done() { return player.s.best.gte(12) },
+				effectDescription: "Generators reset nothing.",
+			},
+		},
+})
+
 addLayer("a", {
         startData() { return {
             unlocked: true,
@@ -462,7 +922,7 @@ addLayer("a", {
             return ("Achievements")
         },
         achievements: {
-            rows: 2,
+            rows: 3,
             cols: 4,
             11: {
                 name: "All that progress is gone!",
@@ -503,6 +963,11 @@ addLayer("a", {
 				name: "Hey I don't own that company yet!",
 				done() { return player.points.gte(1e100) },
 				tooltip: "Reach 1e100 Points.",
+			},
+			31: {
+				name: "Further Further Down",
+				done() { return player.e.unlocked||player.t.unlocked||player.s.unlocked },
+				tooltip: "Perform a Row 3 reset. Reward: Generate Points 50% faster, and Boosters/Generators don't increase each other's requirements.",
 			},
         },
         midsection: [

@@ -68,7 +68,7 @@
 			Note by Jacorb: If anyone wishes to make a mod of this game, that is perfectly fine with me, just make sure to name it something different (ex: Prestige Tree NG+) and to let me know on <a href="https://discord.gg/wwQfgPa" target="_blank">my discord</a>.
 			<br><br>
 			Time Played: {{ formatTime(player.timePlayed) }}<br>
-			<span v-for="layer in LAYERS"><span v-if="player[layer].first!==undefined">First {{layer}} reset: {{formatTime(player[layer].first)}}<br></span></span><br>
+			<span v-for="layer in LAYERS"><span v-if="player[layer].first!==undefined && player[layer].unlocked">First {{layer}} reset: {{formatTime(player[layer].first)}}<br></span></span><br>
 			<h3>Hotkeys</h3><br>
 			<span v-for="key in hotkeys" v-if="player[key.layer].unlocked"><br>{{key.description}}</span>
 		</div>
@@ -116,7 +116,7 @@
 					<br>Offline Time: {{formatTime(player.offTime.remain)}}<br>
 				</span>
 				<span v-if="!player.keepGoing" class="overlayThing">
-					<br>Reach {{formatWhole(modInfo.endgame)+" "+modInfo.pointsName}} to beat the game!<br>
+					<br><span v-if="modInfo.specialEndgameText">{{modInfo.specialEndgameText}}</span><span v-if="!modInfo.specialEndgameText">Reach {{formatWhole(modInfo.endgame)+" "+modInfo.pointsName}} to beat the game!</span><br>
 				</span>
 				<br>
 				<span v-if="player.points.lt('1e1000')"  class="overlayThing">You have </span>
