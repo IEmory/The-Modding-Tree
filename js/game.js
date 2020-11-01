@@ -71,6 +71,14 @@ function shouldNotify(layer){
 			}
 		}
 	}
+	
+	for (id in tmp[layer].buyables){
+		if (!isNaN(id)){
+			if (tmp[layer].buyables[id].unlocked && tmp[layer].buyables[id].canAfford){
+				return true
+			}
+		}
+	}
 
 	if (layers[layer].shouldNotify){
 		return layers[layer].shouldNotify()
@@ -146,7 +154,7 @@ function doReset(layer, force=false) {
 	let row = tmp[layer].row
 	if (!force) {
 		if (tmp[layer].baseAmount.lt(tmp[layer].requires)) return;
-		let gain = tmp[layer].resetGain
+		let gain = tmp[layer].resetGain.max(0)
 		if (tmp[layer].type=="static") {
 			if (tmp[layer].baseAmount.lt(tmp[layer].nextAt)) return;
 			gain =(tmp[layer].canBuyMax ? gain : 1)
