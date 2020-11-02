@@ -507,6 +507,9 @@ addLayer("a", {
         },
         midsection: [
             "achievements",
-        ]
-    }, 
+        ],
+		update(diff) {	// Added this section to call adjustNotificationTime every tick, to reduce notification timers
+			adjustNotificationTime(diff);
+		},	
+	},
 )

@@ -11,6 +11,8 @@ let modInfo = {
 	endgame: new Decimal(1e120),
 }
 
+
+
 // Set your version in num and name
 let VERSION = {
 	num: "0.2",
@@ -65,4 +67,45 @@ function isEndgame() {
 // You can change this if you have things that can be messed up by long tick lengths
 function maxTickLength() {
 	return(3600000) // Default is 1 hour which is just arbitrarily large
+}
+
+// Variables that must be defined to display notifications
+var activeNotifications = [];
+var notificationID = 0;
+
+// Function to show notifications
+function addNotification(type="none",text="This is a test notification.",title="",timer=3) {
+	switch(type) {
+		case "achievement":
+			notificationTitle = "Achievement Unlocked!";
+			notificationType = "achievement-notification"
+			break;
+		case "challenge":
+			notificationTitle = "Challenge Complete";
+			notificationType = "challenge-notification"
+			break;
+		default:
+			notificationTitle = "Something Happened?";
+			notificationType = "default-notification"
+			break;
+	}
+	if(title != "") notificationTitle = title;
+	notificationMessage = text;
+	notificationTimer = timer; 
+
+	activeNotifications.push({"time":notificationTimer,"type":notificationType,"title":notificationTitle,"message":notificationMessage,"id":notificationID})
+	notificationID++;
+
+	console.log(activeNotifications);
+}
+
+
+//Function to reduce time on active notifications
+function adjustNotificationTime(diff) {
+	for(notification in activeNotifications) {
+		activeNotifications[notification].time -= diff;
+		if(activeNotifications[notification]["time"] < 0) {
+			activeNotifications.splice(notification,1); // Remove notification when time hits 0
+		}
+	}
 }
