@@ -2,6 +2,7 @@
 <head>
 
 	<link rel="stylesheet" type="text/css" href="style.css" />
+	<link rel="stylesheet" type="text/css" href="notification.css" />
 	<link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
 	<script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
 	<script type="text/javascript" src="js/break_eternity.js"></script>
@@ -43,6 +44,17 @@
 		<div v-if="player.tab=='changelog'" class="col right">
 			<button class="back" onclick="showTab('tree')">←</button><br><br><br>
 		</div>
+
+		<!-- Notifications -->
+		<div class="notification-container">
+			<transition-group name="fade">
+				<div v-for="notification,index in activeNotifications" class="notification" v-bind:class="notification.type" v-bind:key="notification.id">
+					<h3>{{notification.title}}</h3><br>
+					<h2 v-html="notification.message"></h2>
+				</div>
+			</transition-group>
+		</div>
+		
 		
 		<div v-if="player.tab=='info'" class="col right">
 			<button class="back" onclick="showTab('tree')">←</button><br>
